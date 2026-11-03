@@ -65,6 +65,28 @@ class MailVerp::AddressTest < MailVerp::TestCase
     assert_raises(ArgumentError) { verp(secret: []) }
   end
 
+  def test_blank_or_non_string_secret_is_rejected
+    assert_raises(ArgumentError) { verp(secret: "") }
+    assert_raises(ArgumentError) { verp(secret: [ nil ]) }
+    assert_raises(ArgumentError) { verp(secret: [ "new-secret", "" ]) }
+    assert_raises(ArgumentError) { verp(secret: 1234) }
+  end
+
+  def test_hmac_length_outside_the_digest_is_rejected
+    assert_raises(ArgumentError) { verp(hmac_length: 0) }
+    assert_raises(ArgumentError) { verp(hmac_length: -1) }
+    assert_raises(ArgumentError) { verp(hmac_length: 7) }
+    assert_raises(ArgumentError) { verp(hmac_length: 65) }
+    assert_raises(ArgumentError) { verp(hmac_length: 41, digest: "SHA1") }
+    assert_raises(ArgumentError) { verp(hmac_length: "24") }
+  end
+
+  def test_hmac_length_may_use_the_whole_digest
+    custom = verp(hmac_length: 40, digest: "SHA1")
+
+    assert_equal IDENTIFIER, custom.identifier_for(custom.address_for(IDENTIFIER, domain: DOMAIN))
+  end
+
   def test_wrong_prefix_does_not_match
     other = verp(prefix: "return")
 

@@ -9,6 +9,7 @@ class MailVerp
   DEFAULT_TAG_SEPARATOR = ".".freeze
   DEFAULT_HMAC_LENGTH = 24
   DEFAULT_DIGEST = "SHA256".freeze
+  MIN_HMAC_LENGTH = 8
 
   MAX_LOCAL_PART_BYTESIZE = 64  # RFC 5321 §4.5.3.1.1
   MAX_DOMAIN_BYTESIZE = 253     # RFC 1035 §3.1
@@ -21,13 +22,21 @@ class MailVerp
   def initialize(secret:, prefix: DEFAULT_PREFIX, separator: DEFAULT_SEPARATOR,
     tag_separator: DEFAULT_TAG_SEPARATOR, hmac_length: DEFAULT_HMAC_LENGTH, digest: DEFAULT_DIGEST)
     @secrets = Array(secret)
-    raise ArgumentError, "secret must not be empty" if @secrets.empty?
+    if @secrets.empty? || !@secrets.all? { |s| s.is_a?(String) && !s.empty? }
+      raise ArgumentError, "secret must be a non-empty string, or an array of them"
+    end
 
     @prefix = prefix
     @separator = separator
     @tag_separator = tag_separator
     @hmac_length = hmac_length
     @digest = digest
+
+    max_hmac_length = OpenSSL::HMAC.hexdigest(@digest, "", "").length
+    unless @hmac_length.is_a?(Integer) && @hmac_length.between?(MIN_HMAC_LENGTH, max_hmac_length)
+      raise ArgumentError, "hmac_length must be an integer from #{MIN_HMAC_LENGTH} to #{max_hmac_length}"
+    end
+
     @pattern = build_pattern
   end
 
