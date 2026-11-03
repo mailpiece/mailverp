@@ -65,7 +65,7 @@ class MailVerp
     if valid_domain?(domain) &&
         (match = @pattern.match(local_part_of(address))) &&
         valid_hmac?(match[:id], domain, match[:hmac])
-      match[:id]
+      match[:id].force_encoding(Encoding::UTF_8)
     end
   end
 
@@ -100,11 +100,11 @@ class MailVerp
     end
 
     def domain_of(address)
-      address.to_s.split("@", 2).last.to_s.downcase
+      address.to_s.b.split("@", 2).last.to_s.downcase
     end
 
     def local_part_of(address)
-      address.to_s.split("@", 2).first.to_s.downcase
+      address.to_s.b.split("@", 2).first.to_s.downcase
     end
 
     def valid_hmac?(identifier, domain, hmac)

@@ -108,7 +108,7 @@ That figure is the local-part budget only - it doesn't know what `domain:` you'l
 
 An identifier is only ever placed in a local part, so it's restricted to `a-z`, `0-9`, `_`, and `-` - nothing that requires quoting, and no `+` or `.`, which this library uses as separators. `address_for` raises on anything else.
 
-Uppercase is not in that alphabet, deliberately: some MTAs lower-case a local part in transit even though RFC 5321 says they shouldn't, so an identifier distinguished only by case would not survive the round trip. Reading one back matches the whole local part case-insensitively for the same reason.
+Uppercase is not in that alphabet, deliberately: some MTAs lower-case a local part in transit even though RFC 5321 says they shouldn't, so an identifier distinguished only by case would not survive the round trip. Reading one back matches the whole local part case-insensitively for the same reason, folding ASCII case only.
 
 ## Separators
 

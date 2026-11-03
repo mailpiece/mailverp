@@ -141,6 +141,26 @@ class MailVerp::AddressTest < MailVerp::TestCase
     refute @verp.address?(nil)
   end
 
+  def test_badly_encoded_input_reports_nothing
+    invalid_utf8 = "bounces+x\xff@x.com".dup.force_encoding(Encoding::UTF_8)
+
+    assert_nil @verp.identifier_for(invalid_utf8)
+    refute @verp.address?(invalid_utf8)
+    assert_nil @verp.identifier_for(@address.encode(Encoding::UTF_16LE))
+    refute @verp.address?(@address.encode(Encoding::UTF_16LE))
+  end
+
+  def test_only_ascii_case_is_folded
+    kelvin = @address.sub("k", "\u212A")
+
+    assert_nil @verp.identifier_for(kelvin)
+    refute @verp.address?(kelvin)
+  end
+
+  def test_identifier_read_back_is_utf8
+    assert_equal Encoding::UTF_8, @verp.identifier_for(@address).encoding
+  end
+
   def test_over_long_identifier_is_rejected
     too_long = "a" * (@verp.max_identifier_length + 1)
 
