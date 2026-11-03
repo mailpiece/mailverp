@@ -65,6 +65,28 @@ class MailVerp::AddressTest < MailVerp::TestCase
     assert_raises(ArgumentError) { verp(secret: []) }
   end
 
+  def test_blank_or_non_string_secret_is_rejected
+    assert_raises(ArgumentError) { verp(secret: "") }
+    assert_raises(ArgumentError) { verp(secret: [ nil ]) }
+    assert_raises(ArgumentError) { verp(secret: [ "new-secret", "" ]) }
+    assert_raises(ArgumentError) { verp(secret: 1234) }
+  end
+
+  def test_hmac_length_outside_the_digest_is_rejected
+    assert_raises(ArgumentError) { verp(hmac_length: 0) }
+    assert_raises(ArgumentError) { verp(hmac_length: -1) }
+    assert_raises(ArgumentError) { verp(hmac_length: 7) }
+    assert_raises(ArgumentError) { verp(hmac_length: 65) }
+    assert_raises(ArgumentError) { verp(hmac_length: 41, digest: "SHA1") }
+    assert_raises(ArgumentError) { verp(hmac_length: "24") }
+  end
+
+  def test_hmac_length_may_use_the_whole_digest
+    custom = verp(hmac_length: 40, digest: "SHA1")
+
+    assert_equal IDENTIFIER, custom.identifier_for(custom.address_for(IDENTIFIER, domain: DOMAIN))
+  end
+
   def test_wrong_prefix_does_not_match
     other = verp(prefix: "return")
 
@@ -117,6 +139,26 @@ class MailVerp::AddressTest < MailVerp::TestCase
 
     refute @verp.address?("not-an-address-at-all")
     refute @verp.address?(nil)
+  end
+
+  def test_badly_encoded_input_reports_nothing
+    invalid_utf8 = "bounces+x\xff@x.com".dup.force_encoding(Encoding::UTF_8)
+
+    assert_nil @verp.identifier_for(invalid_utf8)
+    refute @verp.address?(invalid_utf8)
+    assert_nil @verp.identifier_for(@address.encode(Encoding::UTF_16LE))
+    refute @verp.address?(@address.encode(Encoding::UTF_16LE))
+  end
+
+  def test_only_ascii_case_is_folded
+    kelvin = @address.sub("k", "\u212A")
+
+    assert_nil @verp.identifier_for(kelvin)
+    refute @verp.address?(kelvin)
+  end
+
+  def test_identifier_read_back_is_utf8
+    assert_equal Encoding::UTF_8, @verp.identifier_for(@address).encoding
   end
 
   def test_over_long_identifier_is_rejected

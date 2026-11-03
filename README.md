@@ -53,8 +53,9 @@ verp.address_for("2f8x1qk", domain: "mailer.example.com")
 # => "bounces+2f8x1qk.a1b2c3d4e5f6a7b8c9d0e1f2@mailer.example.com"
 ```
 
-- **secret** - a string, or an array for [rotation](#secret-rotation)
+- **secret** - a non-empty string, or an array of them for [rotation](#secret-rotation)
 - **prefix** - the local-part prefix before the identifier; defaults to `"bounces"`
+- **hmac_length** - hex characters of the HMAC kept in the tag; defaults to 24, and must be from 8 to the digest's full length
 - The identifier is yours to choose. It's opaque to this library - a delivery id, most naturally - and is not stored or looked up here
 
 Anything that wouldn't make a legal reverse-path raises `ArgumentError`: an identifier outside the [safe alphabet](#character-safety), a `domain` that isn't a plausible DNS name, or a combination too long for [the octet limits](#local-part-length). Building an address is something your own code controls, so bad input here is a bug, not routine input - unlike reading one back.
@@ -107,7 +108,7 @@ That figure is the local-part budget only - it doesn't know what `domain:` you'l
 
 An identifier is only ever placed in a local part, so it's restricted to `a-z`, `0-9`, `_`, and `-` - nothing that requires quoting, and no `+` or `.`, which this library uses as separators. `address_for` raises on anything else.
 
-Uppercase is not in that alphabet, deliberately: some MTAs lower-case a local part in transit even though RFC 5321 says they shouldn't, so an identifier distinguished only by case would not survive the round trip. Reading one back matches the whole local part case-insensitively for the same reason.
+Uppercase is not in that alphabet, deliberately: some MTAs lower-case a local part in transit even though RFC 5321 says they shouldn't, so an identifier distinguished only by case would not survive the round trip. Reading one back matches the whole local part case-insensitively for the same reason, folding ASCII case only.
 
 ## Separators
 
